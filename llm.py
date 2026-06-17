@@ -20,7 +20,7 @@ import json
 # ---------------------------------------------------------------------------
 
 OLLAMA_BASE_URL = "http://localhost:11434"
-MODEL_NAME = "qwen2.5:7b"
+MODEL_NAME = "qwen2.5:3b"
 
 # How long to wait for a response (seconds).
 # Long transcripts can take 60-120 seconds to process — so we set this high.
