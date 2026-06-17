@@ -59,7 +59,7 @@ def test_real_transcript():
         print()
         print("  First 300 words:")
         print("-" * 50)
-        preview = " ".join(transcript.split()[:3000])
+        preview = " ".join(transcript.split()[:300])
         print(preview)
         print("-" * 50)
 
