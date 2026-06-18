@@ -159,37 +159,45 @@ def build_mcq_prompt(transcript: str) -> str:
 
     return f"""You are an expert exam question writer for educational assessments.
 
-Your task is to create 10 multiple choice questions based on the following video transcript.
+Your task is to create 10 multiple choice questions based ONLY on the video transcript provided below.
 
 REQUIREMENTS:
-- Create exactly 10 questions
+- Create exactly 10 questions, numbered 1 to 10
 - Each question must have exactly 4 options labeled A), B), C), D)
 - Only one option should be correct
-- Questions should test understanding, not just memorization
-- Vary difficulty: 3 easy, 4 medium, 3 hard questions
-- After all 10 questions, add a section called "ANSWER KEY:" with all answers
-- Number questions 1-10
+- Questions must be based on the ACTUAL content of the transcript — never use placeholder text
+- Vary difficulty: roughly 3 easy, 4 medium, 3 hard questions
+- After all 10 questions, add a section called "ANSWER KEY:" listing the correct letter and a short reason for each
 
-EXACT FORMAT TO FOLLOW:
-1. [Question text here]
-   A) [Option A]
-   B) [Option B]
-   C) [Option C]
-   D) [Option D]
+HERE IS A WORKED EXAMPLE ON A DIFFERENT TOPIC (photosynthesis), showing the EXACT format and quality expected.
+This example is ONLY to show you the format — do NOT reuse this example or its topic in your answer.
 
-2. [Question text here]
-   A) [Option A]
-   ...
+EXAMPLE:
+1. What is the primary purpose of photosynthesis in plants?
+   A) To release carbon dioxide into the atmosphere
+   B) To convert light energy into chemical energy stored as glucose
+   C) To absorb oxygen from the air for respiration
+   D) To break down water into hydrogen gas
+
+2. Which part of the plant cell is primarily responsible for photosynthesis?
+   A) Mitochondria
+   B) Nucleus
+   C) Chloroplast
+   D) Ribosome
 
 ANSWER KEY:
-1. [Letter] - [Brief explanation]
-2. [Letter] - [Brief explanation]
-...
+1. B - Photosynthesis converts light energy into chemical energy (glucose), not the other listed processes.
+2. C - Chloroplasts contain chlorophyll, which captures light energy for photosynthesis.
+
+--- END OF EXAMPLE ---
+
+Now generate 10 NEW questions following this exact format, but based entirely on the TRANSCRIPT below.
+Every question, every option, and every answer must come from the transcript content — write real question text, never placeholder brackets like "[Question here]".
 
 TRANSCRIPT:
 {transcript}
 
-Generate the 10 MCQs now:"""
+Generate the 10 MCQs now, starting with question 1:"""
 
 
 # ---------------------------------------------------------------------------
