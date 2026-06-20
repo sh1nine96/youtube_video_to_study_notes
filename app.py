@@ -15,53 +15,53 @@ from study_generator import generate_all_study_material_stream
 def process_video(url: str):
     """
     Full pipeline: URL -> transcript -> all 5 study outputs.
-
-    Generator function — yields updates to ALL 6 output components
-    (1 status box + 5 tab contents) on every step, so Gradio can
-    update the UI live as each section completes.
-
-    Yields:
-        A tuple of 6 values matching the 6 outputs wired to this
-        function: (status, summary, study_notes, key_concepts, mcqs, interview_qs)
+    Generator function — yields updates to all 6 outputs live.
     """
 
-    # Initial empty state for all 5 content tabs
     empty = "*Waiting for processing to start...*"
+    processing = "*⏳ Generating... please wait.*"
 
+    # --- Basic input validation ---
     if not url or not url.strip():
         yield "⚠️ Please enter a YouTube URL.", empty, empty, empty, empty, empty
         return
 
-    # --- Step 1: Fetch transcript ---
-    yield "🔄 Step 1/2: Fetching transcript from YouTube...", empty, empty, empty, empty, empty
+    if "youtube.com" not in url and "youtu.be" not in url:
+        yield (
+            "⚠️ That doesn't look like a YouTube URL. "
+            "Please paste a link like https://www.youtube.com/watch?v=...",
+            empty, empty, empty, empty, empty,
+        )
+        return
+
+    # Clear any previous results immediately so old content doesn't linger
+    yield "🔄 Step 1/2: Fetching transcript from YouTube...", processing, processing, processing, processing, processing
 
     try:
-        transcript = get_transcript(url)
+        transcript, warning = get_transcript(url)
     except ValueError as e:
-        error_msg = f"❌ Error fetching transcript:\n\n{str(e)}"
+        error_msg = f"❌ {str(e)}"
         yield error_msg, empty, empty, empty, empty, empty
         return
 
     word_count = len(transcript.split())
-    status = f"✓ Transcript fetched ({word_count} words). Generating study material..."
-    yield status, empty, empty, empty, empty, empty
+    status_base = f"✓ Transcript fetched ({word_count} words)."
+    if warning:
+        status_base += f"\n\n{warning}"
 
-    # --- Step 2: Stream live progress through all 5 generation steps ---
-    # We keep a running dict of whatever has been generated so far, so that
-    # completed tabs display their content immediately instead of waiting
-    # for ALL 5 to finish.
+    yield f"{status_base}\n\n🔄 Generating study material...", processing, processing, processing, processing, processing
+
     current_results = {
-        "summary": empty,
-        "study_notes": empty,
-        "key_concepts": empty,
-        "mcqs": empty,
-        "interview_questions": empty,
+        "summary": processing,
+        "study_notes": processing,
+        "key_concepts": processing,
+        "mcqs": processing,
+        "interview_questions": processing,
     }
 
     for status_message, results in generate_all_study_material_stream(transcript):
         if results is None:
-            # Still processing — update status only, tabs show what's done so far
-            live_status = f"✓ Transcript fetched ({word_count} words)\n\n🔄 {status_message}"
+            live_status = f"{status_base}\n\n🔄 {status_message}"
             yield (
                 live_status,
                 current_results["summary"],
@@ -71,9 +71,8 @@ def process_video(url: str):
                 current_results["interview_questions"],
             )
         else:
-            # Final batch — all 5 are done, update everything at once
             current_results = results
-            final_status = "✅ All study material generated successfully!"
+            final_status = f"{status_base}\n\n✅ All study material generated successfully!"
             yield (
                 final_status,
                 current_results.get("summary", "Not available"),
@@ -82,7 +81,6 @@ def process_video(url: str):
                 current_results.get("mcqs", "Not available"),
                 current_results.get("interview_questions", "Not available"),
             )
-
 
 # ---------------------------------------------------------------------------
 # Build the UI

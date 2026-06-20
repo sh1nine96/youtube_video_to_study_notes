@@ -15,7 +15,7 @@ import re
 from urllib.parse import urlparse, parse_qs
 # NEW — replace with this:
 from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFound
+from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFound, VideoUnavailable
 # from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound
 
 
@@ -139,6 +139,12 @@ def fetch_transcript(video_id: str) -> list[dict]:
                 "No transcript found for this video. "
                 "The video may not have captions. Please try a different video."
             )
+        
+    except VideoUnavailable:
+        raise ValueError(
+            "This video is unavailable. It may be private, deleted, or "
+            "restricted in your region. Please try a different video."
+        )    
 
     except Exception as e:
         raise ValueError(f"Failed to fetch transcript: {str(e)}")
@@ -200,37 +206,42 @@ def clean_transcript(transcript_segments: list[dict]) -> str:
 # STEP 4: Main Entry Point — One Function to Call from Other Modules
 # ---------------------------------------------------------------------------
 
-def get_transcript(url: str) -> str:
+def get_transcript(url: str) -> tuple[str, str]:
     """
-    Master function: takes a YouTube URL and returns the full clean transcript.
-
-    This is the only function the rest of the app needs to import and call.
-    It orchestrates all three steps:
-      1. extract_video_id()
-      2. fetch_transcript()
-      3. clean_transcript()
-
-    Args:
-        url: A YouTube URL string from the user.
+    Master function: takes a YouTube URL and returns the full clean transcript
+    plus a warning message (empty string if no warning needed).
 
     Returns:
-        A clean, single-string transcript ready for LLM processing.
+        A tuple of (transcript_text, warning_message).
+        warning_message is "" if there's nothing to warn about.
 
     Raises:
-        ValueError: With a descriptive message if anything goes wrong.
+        ValueError: With a descriptive, user-friendly message if anything fails.
     """
-
-    # Step 1: Get the video ID
     video_id = extract_video_id(url)
     print(f"[transcript] Video ID extracted: {video_id}")
 
-    # Step 2: Fetch raw transcript segments
     raw_segments = fetch_transcript(video_id)
     print(f"[transcript] Fetched {len(raw_segments)} transcript segments")
 
-    # Step 3: Clean and join into one string
     transcript_text = clean_transcript(raw_segments)
     word_count = len(transcript_text.split())
     print(f"[transcript] Transcript cleaned. Word count: {word_count}")
 
-    return transcript_text
+    if word_count < 30:
+        raise ValueError(
+            "This video's transcript is too short or empty to generate "
+            "meaningful study material. Please try a different video."
+        )
+
+    warning = ""
+    if word_count > 3000:
+        estimated_minutes = word_count // 150  # rough speech rate estimate
+        warning = (
+            f"⚠️ This video is long (~{word_count} words, ~{estimated_minutes} min of speech). "
+            f"Only the first ~3000 words will be used to generate study material, "
+            f"so later parts of the video may not be covered."
+        )
+        print(f"[transcript] {warning}")
+
+    return transcript_text, warning

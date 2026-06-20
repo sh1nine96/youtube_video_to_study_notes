@@ -18,7 +18,9 @@ def main():
     url = "https://www.youtube.com/watch?v=rEDzUT3ymw4"
 
     print(f"\nStep 1: Fetching transcript...")
-    transcript = get_transcript(url)
+    transcript, warning = get_transcript(url)
+    if warning:
+        print(f"⚠️ Warning: {warning}")
     print(f"✓ Transcript ready ({len(transcript.split())} words)")
 
     print(f"\nStep 2: Generating all study material (this takes a few minutes)...")

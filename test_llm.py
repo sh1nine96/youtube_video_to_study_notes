@@ -38,7 +38,9 @@ def test_summary_generation():
     url = "https://www.youtube.com/watch?v=LPZh9BOjkQs"
 
     print(f"  Step 1: Fetching transcript from YouTube...")
-    transcript = get_transcript(url)
+    transcript, warning = get_transcript(url)
+    if warning:
+        print(f"  ⚠️ Warning: {warning}")
     print(f"  ✓ Transcript ready ({len(transcript.split())} words)")
 
     print(f"\n  Step 2: Building prompt...")

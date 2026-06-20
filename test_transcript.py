@@ -51,7 +51,9 @@ def test_real_transcript():
     print("  Fetching transcript (requires internet)...\n")
 
     try:
-        transcript = get_transcript(test_url)
+        transcript, warning = get_transcript(test_url)
+        if warning:
+            print(f"  ⚠️ Warning: {warning}")
 
         word_count = len(transcript.split())
         print(f"  ✓ Transcript fetched successfully")

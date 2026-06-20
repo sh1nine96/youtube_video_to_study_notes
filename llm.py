@@ -15,6 +15,16 @@ The rest of the app only needs to call: run_prompt(prompt) -> str
 import requests
 import json
 
+import logging
+from datetime import datetime
+
+# --- Basic file logging setup ---
+logging.basicConfig(
+    filename="app.log",
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
+
 # ---------------------------------------------------------------------------
 # CONFIGURATION — change model name here if you switch models later
 # ---------------------------------------------------------------------------
@@ -63,7 +73,9 @@ def run_prompt(prompt: str) -> str:
     }
 
     try:
-        print(f"[llm] Sending prompt to {MODEL_NAME} ({len(prompt.split())} words in prompt)...")
+        word_count_in = len(prompt.split())
+        print(f"[llm] Sending prompt to {MODEL_NAME} ({word_count_in} words in prompt)...")
+        logging.info(f"Sending prompt to {MODEL_NAME} ({word_count_in} words)")
 
         response = requests.post(
             url=f"{OLLAMA_BASE_URL}/api/generate",
@@ -81,29 +93,35 @@ def run_prompt(prompt: str) -> str:
         result = data.get("response", "").strip()
 
         if not result:
+            logging.error("Ollama returned an empty response")
             raise ValueError("Ollama returned an empty response.")
 
-        word_count = len(result.split())
-        print(f"[llm] Response received. Words in output: {word_count}")
+        word_count_out = len(result.split())
+        print(f"[llm] Response received. Words in output: {word_count_out}")
+        logging.info(f"Response received ({word_count_out} words)")
 
         return result
 
     except requests.exceptions.ConnectionError:
+        logging.error("Connection to Ollama failed")
         raise ConnectionError(
             "Cannot connect to Ollama. Please make sure Ollama is running.\n"
             "Start it with: ollama server"
         )
 
     except requests.exceptions.Timeout:
+        logging.error(f"Ollama timed out after {REQUEST_TIMEOUT}s")
         raise TimeoutError(
             f"Ollama took longer than {REQUEST_TIMEOUT} seconds to respond. "
             "Try a shorter transcript or a smaller model."
         )
 
     except requests.exceptions.HTTPError as e:
+        logging.error(f"Ollama HTTP error: {e}")
         raise ValueError(f"Ollama server returned an error: {e}")
 
     except json.JSONDecodeError:
+        logging.error("Failed to parse Ollama JSON response")
         raise ValueError("Could not parse Ollama's response as JSON.")
 
 
